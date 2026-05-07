@@ -39,7 +39,7 @@ export function Catalog() {
   });
 
   return (
-    <section id="catalogo" className="relative py-10 sm:py-16">
+    <section id="catalogo" className="relative pt-28 sm:pt-32 pb-10 sm:pb-16">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="flex flex-col items-center text-center mb-10">
           <span className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">Catálogo</span>
