@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Header } from "@/components/store/Header";
-import { Hero } from "@/components/store/Hero";
 import { Catalog } from "@/components/store/Catalog";
 import { Benefits } from "@/components/store/Benefits";
 import { Footer } from "@/components/store/Footer";
@@ -17,7 +16,7 @@ function Index() {
       <Particles />
       <Header />
       <main className="relative z-10">
-        <Hero />
+        <div id="inicio" />
         <Catalog />
         <Benefits />
       </main>
