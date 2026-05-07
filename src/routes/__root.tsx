@@ -77,10 +77,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Vape House — La evolución del vapeo" },
       { name: "description", content: "Vape House: los mejores vapes premium en Argentina. Envíos rápidos y atención por WhatsApp." },
       { property: "og:title", content: "Vape House — La evolución del vapeo" },
-      { property: "og:description", content: "Los mejores vapes, directo a tu puerta." },
+      { property: "og:description", content: "Vape House: los mejores vapes premium en Argentina. Envíos rápidos y atención por WhatsApp." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Vape House — La evolución del vapeo" },
+      { name: "twitter:description", content: "Vape House: los mejores vapes premium en Argentina. Envíos rápidos y atención por WhatsApp." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4b2fb934-57da-4ff2-aeed-0d92386a7d9a/id-preview-74733e19--8d21ca6c-0fe5-41ed-bee4-0c1af7fe4b26.lovable.app-1778156089997.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4b2fb934-57da-4ff2-aeed-0d92386a7d9a/id-preview-74733e19--8d21ca6c-0fe5-41ed-bee4-0c1af7fe4b26.lovable.app-1778156089997.png" },
     ],
     links: [
       {
