@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatARS } from "@/lib/format";
 import { Pencil, Plus, Trash2, X, Upload } from "lucide-react";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/admin/")({
   component: ProductsAdmin,
@@ -17,23 +18,30 @@ type Product = {
   description: string | null;
   category_id: string | null;
   price: number;
+  puffs: number | null; // Correct column
+  stock_quantity: number; // Correct column
+  image_url: string | null;
+  created_at: string;
+};
+
+// Internal type for UI mapping
+type UIProduct = Product & {
   puff_count: number | null;
   stock_count: number;
   stock_status: string | null;
   featured: boolean;
-  image_url: string | null;
 };
 
 function ProductsAdmin() {
   const qc = useQueryClient();
-  const [editing, setEditing] = React.useState<Partial<Product> | null>(null);
+  const [editing, setEditing] = React.useState<Partial<UIProduct> | null>(null);
   const [search, setSearch] = React.useState("");
   const [filterCat, setFilterCat] = React.useState<string>("all");
 
   const { data: cats = [] } = useQuery({
     queryKey: ["admin-cats"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("categories").select("id,name").order("sort_order");
+      const { data, error } = await supabase.from("categories").select("id,name");
       if (error) throw error;
       return data as Category[];
     },
@@ -44,7 +52,14 @@ function ProductsAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
       if (error) throw error;
-      return data as Product[];
+      
+      return data.map(p => ({
+        ...p,
+        puff_count: (p as any).puffs || (p as any).puff_count || 0,
+        stock_count: (p as any).stock_quantity || (p as any).stock_count || 0,
+        stock_status: (p as any).stock_quantity > 0 ? 'available' : 'out_of_stock',
+        featured: (p as any).featured || false
+      })) as UIProduct[];
     },
   });
 
@@ -69,9 +84,59 @@ function ProductsAdmin() {
           <h1 className="font-display text-3xl font-semibold">Productos</h1>
           <p className="text-sm text-muted-foreground mt-1">{products.length} productos en total</p>
         </div>
-        <button onClick={() => setEditing({})} className="btn-premium inline-flex items-center gap-2">
-          <Plus className="size-4" /> Nuevo producto
-        </button>
+        <div className="flex items-center gap-3">
+          <label className="btn-ghost-pill inline-flex items-center gap-2 cursor-pointer">
+            <Upload className="size-4" /> Importar Excel/CSV
+            <input
+              type="file"
+              accept=".xlsx, .xls, .csv"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = async (evt) => {
+                  try {
+                    const bstr = evt.target?.result;
+                    const wb = XLSX.read(bstr, { type: "binary" });
+                    const wsname = wb.SheetNames[0];
+                    const ws = wb.Sheets[wsname];
+                    const data = XLSX.utils.sheet_to_json(ws) as any[];
+                    
+                    toast.info(`Procesando ${data.length} productos...`);
+                    
+                    let imported = 0;
+                    for (const row of data) {
+                      const payload = {
+                        name: row.nombre || row.Name || row.name,
+                        price: Number(row.precio || row.Price || row.price) || 0,
+                        stock_count: Number(row.stock || row.Stock || row.stock_count) || 0,
+                        puff_count: Number(row.puffs || row.Puffs || row.pitadas) || null,
+                        description: row.descripcion || row.Description || row.description || null,
+                      };
+                      
+                      if (payload.name) {
+                        const { error } = await supabase.from("products").insert(payload);
+                        if (!error) imported++;
+                      }
+                    }
+                    
+                    toast.success(`Importación finalizada: ${imported} productos añadidos.`);
+                    qc.invalidateQueries({ queryKey: ["admin-products"] });
+                  } catch (err) {
+                    toast.error("Error al procesar el archivo");
+                    console.error(err);
+                  }
+                };
+                reader.readAsBinaryString(file);
+              }}
+            />
+          </label>
+          <button onClick={() => setEditing({})} className="btn-premium inline-flex items-center gap-2">
+            <Plus className="size-4" /> Nuevo producto
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -158,9 +223,9 @@ function ProductModal({
     setUploading(true);
     const ext = file.name.split(".").pop();
     const path = `${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
+    const { error } = await supabase.storage.from("products").upload(path, file, { upsert: true });
     if (error) { toast.error(error.message); setUploading(false); return; }
-    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+    const { data } = supabase.storage.from("products").getPublicUrl(path);
     setForm((f) => ({ ...f, image_url: data.publicUrl }));
     setUploading(false);
   };
@@ -172,10 +237,8 @@ function ProductModal({
       description: form.description ?? null,
       category_id: form.category_id || null,
       price: Number(form.price) || 0,
-      puff_count: form.puff_count ? Number(form.puff_count) : null,
-      stock_count: Number(form.stock_count) || 0,
-      stock_status: form.stock_status || "available",
-      featured: !!form.featured,
+      puffs: form.puff_count ? Number(form.puff_count) : null,
+      stock_quantity: Number(form.stock_count) || 0,
       image_url: form.image_url || null,
     };
     const res = form.id
@@ -228,14 +291,7 @@ function ProductModal({
               </select>
             </Field>
           </div>
-          <Field label="Estado de stock">
-            <select value={form.stock_status || "available"} onChange={(e) => setForm({ ...form, stock_status: e.target.value })} className={inputCls}>
-              <option value="available">Disponible</option>
-              <option value="last_unit">Última unidad</option>
-              <option value="out_of_stock">Sin stock</option>
-            </select>
-          </Field>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-sm pt-2">
             <input type="checkbox" checked={!!form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} />
             Destacado
           </label>

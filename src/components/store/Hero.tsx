@@ -1,38 +1,57 @@
-import heroImg from "@/assets/hero-vape.png";
+
+import { ShoppingCart, CreditCard, MessageCircle, ArrowDown } from "lucide-react";
 
 export function Hero() {
+  const steps = [
+    {
+      icon: <ShoppingCart className="size-4 text-foreground/80" />,
+      title: "1. Carrito",
+      description: "Agrega tus productos",
+    },
+    {
+      icon: <CreditCard className="size-4 text-foreground/80" />,
+      title: "2. Checkout",
+      description: "Elige envío y pago",
+    },
+    {
+      icon: <MessageCircle className="size-4 text-foreground/80" />,
+      title: "3. WhatsApp",
+      description: "Finaliza tu pedido",
+    },
+  ];
+
   return (
-    <section className="relative pt-32 sm:pt-40 pb-20 sm:pb-28">
+    <section className="relative pt-24 sm:pt-28 pb-4 sm:pb-6">
       <div className="mx-auto max-w-6xl px-5 sm:px-8 text-center relative">
-        <div className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-8">
-          <span className="h-px w-8 bg-white/20" /> Argentina · 2026 <span className="h-px w-8 bg-white/20" />
-        </div>
-        <h1 className="font-display text-5xl sm:text-7xl md:text-8xl font-semibold leading-[0.95] tracking-tight">
-          <span className="text-gradient">LA EVOLUCIÓN</span>
+        <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-semibold leading-[0.95] tracking-tight">
+          <span className="text-gradient">Los mejores vapes,</span>
           <br />
-          <span className="text-foreground">DEL VAPEO</span>
+          <span className="text-foreground">directo a tu puerta.</span>
         </h1>
-        <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
-          Los mejores vapes, directo a tu puerta. Curado con obsesión por la calidad.
+        <p className="mt-4 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
+          Puntos de retiro en Palermo y Recoleta. Envios a todo Caba y Argentina.
         </p>
-        <div className="mt-10 flex justify-center">
-          <a href="#catalogo" className="btn-premium inline-flex items-center gap-2 text-sm">
-            Ver catálogo →
-          </a>
+
+        {/* Purchase Tutorial - Minimalist */}
+        <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-10 max-w-3xl mx-auto">
+          {steps.map((step, index) => (
+            <div key={index} className="flex items-center gap-3 text-left">
+              <div className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                {step.icon}
+              </div>
+              <div>
+                <h3 className="text-xs font-medium text-foreground">{step.title}</h3>
+                <p className="text-[10px] text-muted-foreground leading-tight">{step.description}</p>
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div className="relative mt-16 sm:mt-20 flex justify-center">
-          <div className="absolute inset-0 -z-10 blur-3xl opacity-60"
-               style={{ background: "radial-gradient(closest-side, oklch(0.55 0.22 320 / 0.45), transparent 70%)" }} />
-          <img
-            src={heroImg}
-            alt="Vape premium"
-            width={520}
-            height={520}
-            className="w-[260px] sm:w-[360px] md:w-[460px] h-auto animate-drift drop-shadow-[0_30px_60px_rgba(120,40,180,0.35)]"
-          />
-        </div>
+
+
       </div>
     </section>
   );
 }
+
+

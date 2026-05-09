@@ -13,9 +13,10 @@ export function Catalog() {
   const { data: cats = [] } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("categories").select("*").order("sort_order");
+      // Removed sort_order as it may not exist yet
+      const { data, error } = await supabase.from("categories").select("id,name");
       if (error) throw error;
-      return data as Category[];
+      return data.map(c => ({ ...c, slug: c.name.toLowerCase() })) as Category[];
     },
   });
 
@@ -24,22 +25,30 @@ export function Catalog() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id,name,price,puff_count,stock_count,stock_status,image_url,featured,category_id")
-        .order("featured", { ascending: false })
-        .order("sort_order");
+        .select("id,name,price,puffs,stock_quantity,image_url,category_id")
+        .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as (Product & { category_id: string | null })[];
+      
+      // Map columns to what the frontend expects
+      return data.map(p => ({
+        ...p,
+        puff_count: p.puffs,
+        stock_count: p.stock_quantity,
+        featured: false,
+        stock_status: p.stock_quantity > 0 ? 'in_stock' : 'out_of_stock'
+      })) as (Product & { category_id: string | null })[];
     },
   });
 
   const filtered = products.filter((p) => {
+    const hasStock = (p.stock_count ?? 0) > 0;
     const okCat = active === "all" || p.category_id === active;
     const okQ = q.trim() === "" || p.name.toLowerCase().includes(q.toLowerCase());
-    return okCat && okQ;
+    return hasStock && okCat && okQ;
   });
 
   return (
-    <section id="catalogo" className="relative pt-28 sm:pt-32 pb-10 sm:pb-16">
+    <section id="catalogo" className="relative pt-8 sm:pt-12 pb-10 sm:pb-16">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="flex flex-col items-center text-center mb-10">
           <span className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">Catálogo</span>

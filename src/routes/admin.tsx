@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LogOut, Package, Tag } from "lucide-react";
+import { LogOut, Package, Tag, Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
@@ -10,31 +10,29 @@ export const Route = createFileRoute("/admin")({
 function AdminLayout() {
   const [ready, setReady] = React.useState(false);
   const [authed, setAuthed] = React.useState(false);
-  const [isAdmin, setIsAdmin] = React.useState(false);
   const navigate = useNavigate();
 
   React.useEffect(() => {
     const check = async () => {
-      const { data } = await supabase.auth.getSession();
-      const session = data.session;
-      setAuthed(!!session);
-      if (session) {
-        const { data: roles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id);
-        setIsAdmin(!!roles?.some((r) => r.role === "admin"));
+      try {
+        const { data } = await supabase.auth.getSession();
+        setAuthed(!!data.session);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setReady(true);
       }
-      setReady(true);
     };
     check();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => check());
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthed(!!session);
+      setReady(true);
+    });
     return () => sub.subscription.unsubscribe();
   }, []);
 
   if (!ready) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Cargando…</div>;
   if (!authed) return <AuthScreen />;
-  if (!isAdmin) return <NoAccess onLogout={async () => { await supabase.auth.signOut(); }} />;
 
   return (
     <div className="min-h-screen">
@@ -79,6 +77,7 @@ function AuthScreen() {
   const [mode, setMode] = React.useState<"login" | "signup">("login");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [err, setErr] = React.useState<string | null>(null);
 
@@ -113,11 +112,21 @@ function AuthScreen() {
             placeholder="email@vapehouse.com"
             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[oklch(0.62_0.18_320)]"
           />
-          <input
-            type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
-            placeholder="Contraseña"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[oklch(0.62_0.18_320)]"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              required value={password} onChange={(e) => setPassword(e.target.value)}
+              placeholder="Contraseña"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[oklch(0.62_0.18_320)] pr-11"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors p-1"
+            >
+              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </div>
         </div>
         {err && <p className="text-sm text-[oklch(0.7_0.2_25)]">{err}</p>}
         <button disabled={loading} className="btn-premium w-full">
