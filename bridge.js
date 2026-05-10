@@ -2,6 +2,16 @@ import { eventHandler, readRawBody } from 'h3'
 import server from './dist/server/server.js'
 
 export default eventHandler(async (event) => {
+  // RUTA SECRETA DE DEBUG
+  if (event.path === '/debug-env') {
+    return {
+      url: !!process.env.SUPABASE_URL,
+      key: !!process.env.SUPABASE_PUBLISHABLE_KEY,
+      service: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      node_env: process.env.NODE_ENV
+    }
+  }
+
   if (event.path.startsWith('/assets/')) {
     return
   }
@@ -27,11 +37,10 @@ export default eventHandler(async (event) => {
       duplex: body ? 'half' : undefined
     })
 
-    // Forzamos la visibilidad de las variables de entorno para el servidor de TanStack
     const env = {
       ...process.env,
-      SUPABASE_URL: process.env.SUPABASE_URL,
-      SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY,
+      SUPABASE_URL: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY,
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
     }
 
