@@ -2,26 +2,28 @@ import { eventHandler, readRawBody } from 'h3'
 import server from './dist/server/server.js'
 
 export default eventHandler(async (event) => {
+  // SI ES UN ASSET, NO HACEMOS NADA (Dejamos que Nitro/Vercel lo sirva)
+  if (event.path.startsWith('/assets/')) {
+    return
+  }
+
   try {
-    // Usamos directamente los objetos de Node para máxima compatibilidad
     const nodeReq = event.node.req
     const headers = nodeReq.headers
     const method = nodeReq.method || 'GET'
     
-    // Construcción de URL manual desde Node
     const protocol = headers['x-forwarded-proto'] || 'https'
     const host = headers['host'] || 'vape-house.vercel.app'
     const fullUrl = new URL(event.path || '/', `${protocol}://${host}`).href
     
     let body = null
     if (method !== 'GET' && method !== 'HEAD') {
-      // Intentamos leer el body con h3, si falla, seguimos sin body
       body = await readRawBody(event, false).catch(() => null)
     }
 
     const request = new Request(fullUrl, {
       method,
-      headers: headers, // Los headers de Node son compatibles con Request
+      headers: headers,
       body,
       duplex: body ? 'half' : undefined
     })
