@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "start": "vite preview",
-    "preview": "vite preview",
+    "build": "NITRO_PRESET=vercel vite build",
+    "start": "NITRO_PRESET=vercel node .output/server/index.mjs",
+    "preview": "NITRO_PRESET=vercel node .output/server/index.mjs",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
