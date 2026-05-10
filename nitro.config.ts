@@ -1,24 +1,27 @@
-import { defineNitroConfig } from 'nitropack/config'
+import { defineNitroConfig } from "nitropack/config";
 
 export default defineNitroConfig({
-  preset: 'vercel',
-  srcDir: '.',
-  // Especificamos dónde están los archivos estáticos generados por Vite
-  publicAssets: [
-    {
-      dir: './dist/client',
-      maxAge: 31536000 // 1 año de caché para assets
-    }
-  ],
+  preset: "vercel",
+  srcDir: "src",
   handlers: [
     {
-      route: '/**',
-      handler: './bridge.js'
+      route: "/**",
+      handler: "./bridge.js"
     }
   ],
-  // Reglas de ruta para asegurar que los assets no pasen por el bridge
+  publicAssets: [
+    {
+      dir: "../dist/client",
+      maxAge: 31536000
+    }
+  ],
   routeRules: {
-    '/assets/**': { static: true },
-    '/_server/**': { cors: true }
+    "/assets/**": { static: true, headers: { "Content-Type": "application/javascript" } },
+    "/_server/**": { proxy: "/**" }
+  },
+  output: {
+    dir: ".vercel/output",
+    serverDir: ".vercel/output/functions/index.func",
+    publicDir: ".vercel/output/static"
   }
-})
+});

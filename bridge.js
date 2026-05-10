@@ -1,55 +1,34 @@
-import { eventHandler, readRawBody } from 'h3'
-import server from './dist/server/server.js'
+import { eventHandler, toWebRequest } from 'h3';
 
 export default eventHandler(async (event) => {
-  // RUTA SECRETA DE DEBUG
-  if (event.path === '/debug-env') {
-    return {
-      url: !!process.env.SUPABASE_URL,
-      key: !!process.env.SUPABASE_PUBLISHABLE_KEY,
-      service: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-      node_env: process.env.NODE_ENV
-    }
+  const url = new URL(event.node.req.url, `http://${event.node.req.headers.host}`);
+  
+  // Si es un asset, dejar que Nitro lo maneje solo
+  if (url.pathname.startsWith('/assets/') || url.pathname.includes('.')) {
+    return;
   }
 
-  if (event.path.startsWith('/assets/')) {
-    return
-  }
+  console.log('[Bridge] Request:', url.pathname);
 
   try {
-    const nodeReq = event.node.req
-    const headers = nodeReq.headers
-    const method = nodeReq.method || 'GET'
+    const { handler } = await import('./.vercel/output/functions/index.func/index.mjs');
     
-    const protocol = headers['x-forwarded-proto'] || 'https'
-    const host = headers['host'] || 'vape-house.vercel.app'
-    const fullUrl = new URL(event.path || '/', `${protocol}://${host}`).href
-    
-    let body = null
-    if (method !== 'GET' && method !== 'HEAD') {
-      body = await readRawBody(event, false).catch(() => null)
+    // Construir un Request manual para evitar fallos de h3.toWebRequest
+    const headers = new Headers();
+    for (const [key, value] of Object.entries(event.node.req.headers)) {
+      if (value) headers.append(key, Array.isArray(value) ? value.join(',') : value);
     }
 
-    const request = new Request(fullUrl, {
-      method,
+    const webReq = new Request(url.href, {
+      method: event.node.req.method,
       headers: headers,
-      body,
-      duplex: body ? 'half' : undefined
-    })
+      body: ['GET', 'HEAD'].includes(event.node.req.method) ? undefined : event.node.req
+    });
 
-    const env = {
-      ...process.env,
-      SUPABASE_URL: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
-      SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY,
-      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
-    }
-
-    return await server.fetch(request, env, {})
-  } catch (error) {
-    console.error('Error in bridge:', error)
-    return new Response(`Error en el servidor:\n${error.message}\n${error.stack}`, {
-      status: 500,
-      headers: { 'content-type': 'text/plain' }
-    })
+    const response = await handler(webReq);
+    return response;
+  } catch (err) {
+    console.error('[Bridge] Error:', err);
+    return new Response(`Server Error: ${err.message}`, { status: 500 });
   }
-})
+});
