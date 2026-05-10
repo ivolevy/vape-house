@@ -2,7 +2,6 @@ import { eventHandler, readRawBody } from 'h3'
 import server from './dist/server/server.js'
 
 export default eventHandler(async (event) => {
-  // SI ES UN ASSET, NO HACEMOS NADA (Dejamos que Nitro/Vercel lo sirva)
   if (event.path.startsWith('/assets/')) {
     return
   }
@@ -28,7 +27,15 @@ export default eventHandler(async (event) => {
       duplex: body ? 'half' : undefined
     })
 
-    return await server.fetch(request, process.env, {})
+    // Forzamos la visibilidad de las variables de entorno para el servidor de TanStack
+    const env = {
+      ...process.env,
+      SUPABASE_URL: process.env.SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY,
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
+    }
+
+    return await server.fetch(request, env, {})
   } catch (error) {
     console.error('Error in bridge:', error)
     return new Response(`Error en el servidor:\n${error.message}\n${error.stack}`, {
