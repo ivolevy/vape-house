@@ -1,8 +1,12 @@
 import { defineNitroConfig } from "nitropack/config";
+import path from "path";
 
 export default defineNitroConfig({
   preset: "vercel",
-  // Quitamos srcDir para que Nitro no intente compilar los archivos de React
+  alias: {
+    "@": path.resolve(__dirname, "./src"),
+    "@supabase": path.resolve(__dirname, "./src/integrations/supabase")
+  },
   handlers: [
     {
       route: "/**",

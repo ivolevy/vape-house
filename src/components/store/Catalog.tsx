@@ -13,30 +13,38 @@ export function Catalog() {
   const { data: cats = [] } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
+      console.log("[Catalog] Fetching categories...");
       const { data, error } = await supabase.from("categories").select("id,name");
-      if (error) throw error;
+      if (error) {
+        console.error("[Catalog] Category error:", error);
+        throw error;
+      }
+      console.log("[Catalog] Categories loaded:", data?.length);
       return (data || []).map(c => ({ ...c, slug: c.name.toLowerCase() })) as Category[];
     },
   });
 
-  const { data: products = [], isLoading } = useQuery({
+  const { data: products = [], isLoading, error: queryError } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
+      console.log("[Catalog] Fetching products...");
       const { data, error } = await supabase
         .from("products")
-        .select("*") // Seleccionamos todo para evitar errores de columnas faltantes
+        .select("*")
         .order("created_at", { ascending: false });
       
       if (error) {
-        console.error("Error fetching products:", error);
+        console.error("[Catalog] Product error:", error);
         throw error;
       }
+      
+      console.log("[Catalog] Products loaded from DB:", data?.length);
       
       return (data || []).map(p => ({
         ...p,
         id: p.id,
         name: p.name,
-        price: Number(p.price), // Aseguramos que el precio sea número
+        price: Number(p.price),
         puff_count: p.puffs || p.puff_count,
         stock_count: p.stock_quantity || p.stock_count || 0,
         image_url: p.image_url,
@@ -53,6 +61,10 @@ export function Catalog() {
     const okQ = q.trim() === "" || p.name.toLowerCase().includes(q.toLowerCase());
     return hasStock && okCat && okQ;
   });
+
+  if (queryError) {
+    console.error("[Catalog] Query error detail:", queryError);
+  }
 
   return (
     <section id="catalogo" className="relative pt-8 sm:pt-12 pb-10 sm:pb-16">
@@ -98,8 +110,8 @@ export function Catalog() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
-            <p>No hay productos disponibles que coincidan con la búsqueda.</p>
-            {products.length === 0 && <p className="text-xs mt-2">La base de datos parece estar vacía para el cliente.</p>}
+            <p>No hay productos disponibles.</p>
+            <p className="text-xs mt-2">Productos en DB: {products.length}. Filtrados: {filtered.length}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
