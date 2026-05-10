@@ -5,7 +5,7 @@ export default defineNitroConfig({
   preset: "vercel",
   alias: {
     "@": path.resolve(__dirname, "./src"),
-    "@supabase": path.resolve(__dirname, "./src/integrations/supabase")
+    "@integrations": path.resolve(__dirname, "./src/integrations")
   },
   handlers: [
     {
