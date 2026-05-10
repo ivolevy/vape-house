@@ -1,19 +1,17 @@
 import { defineNitroConfig } from "nitropack/config";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineNitroConfig({
   preset: "vercel",
   alias: {
     "@": path.resolve(__dirname, "./src"),
-    "@integrations": path.resolve(__dirname, "./src/integrations"),
-    "@dist": path.resolve(__dirname, "./dist/server")
+    "@integrations": path.resolve(__dirname, "./src/integrations")
   },
-  handlers: [
-    {
-      route: "/**",
-      handler: "./bridge.js"
-    }
-  ],
+  // Dejamos que TanStack Start maneje los handlers automáticamente
+  // Eliminamos el bridge manual que causaba errores de h3
   publicAssets: [
     {
       dir: "dist/client",
@@ -21,12 +19,6 @@ export default defineNitroConfig({
     }
   ],
   routeRules: {
-    "/assets/**": { static: true },
-    "/_server/**": { proxy: "/**" }
-  },
-  output: {
-    dir: ".vercel/output",
-    serverDir: ".vercel/output/functions/index.func",
-    publicDir: ".vercel/output/static"
+    "/assets/**": { static: true }
   }
 });
