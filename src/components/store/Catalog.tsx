@@ -13,10 +13,9 @@ export function Catalog() {
   const { data: cats = [] } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      // Removed sort_order as it may not exist yet
       const { data, error } = await supabase.from("categories").select("id,name");
       if (error) throw error;
-      return data.map(c => ({ ...c, slug: c.name.toLowerCase() })) as Category[];
+      return (data || []).map(c => ({ ...c, slug: c.name.toLowerCase() })) as Category[];
     },
   });
 
@@ -25,23 +24,31 @@ export function Catalog() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id,name,price,puffs,stock_quantity,image_url,category_id")
+        .select("*") // Seleccionamos todo para evitar errores de columnas faltantes
         .order("created_at", { ascending: false });
-      if (error) throw error;
       
-      // Map columns to what the frontend expects
-      return data.map(p => ({
+      if (error) {
+        console.error("Error fetching products:", error);
+        throw error;
+      }
+      
+      return (data || []).map(p => ({
         ...p,
-        puff_count: p.puffs,
-        stock_count: p.stock_quantity,
-        featured: false,
-        stock_status: p.stock_quantity > 0 ? 'in_stock' : 'out_of_stock'
+        id: p.id,
+        name: p.name,
+        price: Number(p.price), // Aseguramos que el precio sea número
+        puff_count: p.puffs || p.puff_count,
+        stock_count: p.stock_quantity || p.stock_count || 0,
+        image_url: p.image_url,
+        featured: p.featured || false,
+        stock_status: (p.stock_quantity || p.stock_count) > 0 ? 'in_stock' : 'out_of_stock'
       })) as (Product & { category_id: string | null })[];
     },
   });
 
   const filtered = products.filter((p) => {
-    const hasStock = (p.stock_count ?? 0) > 0;
+    const stock = Number(p.stock_count ?? 0);
+    const hasStock = stock > 0;
     const okCat = active === "all" || p.category_id === active;
     const okQ = q.trim() === "" || p.name.toLowerCase().includes(q.toLowerCase());
     return hasStock && okCat && okQ;
@@ -91,8 +98,8 @@ export function Catalog() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
-            <p>No hay productos disponibles.</p>
-            <p className="text-xs mt-2">Cargá productos desde el panel /admin</p>
+            <p>No hay productos disponibles que coincidan con la búsqueda.</p>
+            {products.length === 0 && <p className="text-xs mt-2">La base de datos parece estar vacía para el cliente.</p>}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
