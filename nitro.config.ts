@@ -2,7 +2,7 @@ import { defineNitroConfig } from "nitropack/config";
 
 export default defineNitroConfig({
   preset: "vercel",
-  srcDir: "src",
+  // Quitamos srcDir para que Nitro no intente compilar los archivos de React
   handlers: [
     {
       route: "/**",
@@ -11,12 +11,12 @@ export default defineNitroConfig({
   ],
   publicAssets: [
     {
-      dir: "../dist/client",
+      dir: "dist/client",
       maxAge: 31536000
     }
   ],
   routeRules: {
-    "/assets/**": { static: true, headers: { "Content-Type": "application/javascript" } },
+    "/assets/**": { static: true },
     "/_server/**": { proxy: "/**" }
   },
   output: {

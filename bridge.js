@@ -1,19 +1,18 @@
-import { eventHandler, toWebRequest } from 'h3';
+import { eventHandler } from 'h3';
 
 export default eventHandler(async (event) => {
   const url = new URL(event.node.req.url, `http://${event.node.req.headers.host}`);
   
-  // Si es un asset, dejar que Nitro lo maneje solo
+  // Ignorar assets y archivos con extensión
   if (url.pathname.startsWith('/assets/') || url.pathname.includes('.')) {
     return;
   }
 
-  console.log('[Bridge] Request:', url.pathname);
-
   try {
-    const { handler } = await import('./.vercel/output/functions/index.func/index.mjs');
+    // Importamos el objeto default de server.js
+    const { default: server } = await import('./dist/server/server.js');
     
-    // Construir un Request manual para evitar fallos de h3.toWebRequest
+    // Construir headers
     const headers = new Headers();
     for (const [key, value] of Object.entries(event.node.req.headers)) {
       if (value) headers.append(key, Array.isArray(value) ? value.join(',') : value);
@@ -25,10 +24,11 @@ export default eventHandler(async (event) => {
       body: ['GET', 'HEAD'].includes(event.node.req.method) ? undefined : event.node.req
     });
 
-    const response = await handler(webReq);
+    // Llamamos al método fetch del servidor
+    const response = await server.fetch(webReq);
     return response;
   } catch (err) {
-    console.error('[Bridge] Error:', err);
+    console.error('[Bridge Error]:', err);
     return new Response(`Server Error: ${err.message}`, { status: 500 });
   }
 });
