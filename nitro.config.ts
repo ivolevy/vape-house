@@ -9,10 +9,5 @@ export default defineNitroConfig({
       route: "/**",
       handler: resolve(process.cwd(), "dist/server/index.js"),
     },
-  ],
-  output: {
-    dir: ".output",
-    serverDir: ".output/server",
-    publicDir: ".output/static"
-  }
+  ]
 });
