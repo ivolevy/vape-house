@@ -7,6 +7,7 @@ import { Search } from "lucide-react";
 type Category = { id: string; name: string; slug: string };
 
 export function Catalog() {
+  console.log("[Catalog] Rendering component...");
   const [active, setActive] = React.useState<string>("all");
   const [q, setQ] = React.useState("");
 

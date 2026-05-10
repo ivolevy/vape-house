@@ -14,8 +14,8 @@ export default eventHandler(async (event) => {
 
   try {
     if (!serverInstance) {
-      // Importar el index.js que es el entry point generado
-      const { default: server } = await import('./dist/server/index.js');
+      // Usar el alias definido en nitro.config.ts
+      const { default: server } = await import('@dist/server.js');
       serverInstance = server;
     }
     
