@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && nitro build",
+    "build": "NITRO_PRESET=vercel vite build",
     "start": "node .output/server/index.mjs",
     "preview": "node .output/server/index.mjs",
     "lint": "eslint .",
