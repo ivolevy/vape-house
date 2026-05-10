@@ -1,9 +1,10 @@
-import { eventHandler, setResponseHeaders, setResponseStatus } from 'h3';
+import { eventHandler } from 'h3';
 
 let serverInstance = null;
 
 export default eventHandler(async (event) => {
-  const url = new URL(event.node.req.url, `http://${event.node.req.headers.host}`);
+  const { req, res } = event.node;
+  const url = new URL(req.url, `http://${req.headers.host}`);
   
   // Ignorar assets
   if (url.pathname.startsWith('/assets/') || url.pathname.includes('.')) {
@@ -11,39 +12,35 @@ export default eventHandler(async (event) => {
   }
 
   try {
-    // Cargar el servidor solo una vez
     if (!serverInstance) {
       const { default: server } = await import('./dist/server/server.js');
       serverInstance = server;
     }
     
-    // Construir headers del request
     const headers = new Headers();
-    for (const [key, value] of Object.entries(event.node.req.headers)) {
+    for (const [key, value] of Object.entries(req.headers)) {
       if (value) headers.append(key, Array.isArray(value) ? value.join(',') : value);
     }
 
     const webReq = new Request(url.href, {
-      method: event.node.req.method,
+      method: req.method,
       headers: headers,
-      body: ['GET', 'HEAD'].includes(event.node.req.method) ? undefined : event.node.req
+      body: ['GET', 'HEAD'].includes(req.method) ? undefined : req
     });
 
     const response = await serverInstance.fetch(webReq);
     
-    // Pasar los headers de la respuesta a Nitro
-    const responseHeaders = {};
+    // Usar métodos nativos de Node.js para las cabeceras y el estado
+    res.statusCode = response.status;
     response.headers.forEach((v, k) => {
-      responseHeaders[k] = v;
+      res.setHeader(k, v);
     });
-    setResponseHeaders(event, responseHeaders);
-    setResponseStatus(event, response.status);
 
-    // Devolver el cuerpo como texto o stream
     const body = await response.text();
-    return body;
+    res.end(body);
   } catch (err) {
     console.error('[Bridge Error]:', err);
-    return `Server Error: ${err.message}`;
+    res.statusCode = 500;
+    res.end(`Server Error: ${err.message}\n${err.stack}`);
   }
 });
