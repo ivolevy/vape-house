@@ -4,11 +4,8 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
-  HeadContent,
-  Scripts,
 } from "@tanstack/react-router";
 
-import appCss from "../styles.css?url";
 import { CartProvider } from "@/lib/cart-store";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -70,48 +67,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Vape House — La evolución del vapeo" },
-      { name: "description", content: "Vape House: los mejores vapes premium en Argentina. Envíos rápidos y atención por WhatsApp." },
-      { property: "og:title", content: "Vape House — La evolución del vapeo" },
-      { property: "og:description", content: "Vape House: los mejores vapes premium en Argentina. Envíos rápidos y atención por WhatsApp." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Vape House — La evolución del vapeo" },
-      { name: "twitter:description", content: "Vape House: los mejores vapes premium en Argentina. Envíos rápidos y atención por WhatsApp." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4b2fb934-57da-4ff2-aeed-0d92386a7d9a/id-preview-74733e19--8d21ca6c-0fe5-41ed-bee4-0c1af7fe4b26.lovable.app-1778156089997.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4b2fb934-57da-4ff2-aeed-0d92386a7d9a/id-preview-74733e19--8d21ca6c-0fe5-41ed-bee4-0c1af7fe4b26.lovable.app-1778156089997.png" },
-    ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-    ],
-  }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
-
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="es" className="dark scroll-smooth">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
