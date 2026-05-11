@@ -5,10 +5,14 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [
+    // ... existing plugins
     react(),
     tsconfigPaths(),
     tailwindcss(),
   ],
+  optimizeDeps: {
+    include: ['xlsx'],
+  },
   build: {
     outDir: "dist",
     emptyOutDir: true,
